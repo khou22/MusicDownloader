@@ -5,10 +5,17 @@ from bs4 import BeautifulSoup # Module to sort through HTML
 import lxml # Module to prepare html for BeautifulSoup
 import urllib2 # Gets html
 
+# Prompt User for Keywords for Song
+userSearch = raw_input("Search for song: ") # Reads input as a string
+# userSearch = input("Search for song (use quotes): ") # Reads input as raw code
+print("Searching for " + userSearch)
+userSearch = userSearch.strip() # Remove extraneous white space
+
 # Search for song in iTunes Store
+# Documentation: http://www.apple.com/itunes/affiliates/resources/documentation/itunes-store-web-service-search-api.html
 baseURL = "https://itunes.apple.com/search?"
 searchKeys = [
-    ["term", "Red Light Tiesto"],
+    ["term", userSearch],
     ["country", "US"],
     ["media", "music"],
     ["limit", "50"],
@@ -34,9 +41,11 @@ print("Final URL: " + finalURL)
 response = urllib2.urlopen(finalURL) #Get HTML source code
 html = response.read() #HTML source code
 soup = BeautifulSoup(html, "lxml") # Using lxml parser
+print("Found iTunes data")
 # print(soup.prettify()) # Feedback
 
 rawJSON = soup.find('p').text # Just the json text
+rawJSON.strip() # Trim the white space
 
 # Parse iTunes JSON Data
 iTunesObj = json.loads(rawJSON) # Decode JSON

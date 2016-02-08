@@ -4,11 +4,12 @@ import json # Json encoder/decoder
 from bs4 import BeautifulSoup # Module to sort through HTML
 import lxml # Module to prepare html for BeautifulSoup
 import urllib2 # Gets html
+import sys # Allow more control over printing
 
 # Prompt User for Keywords for Song
 userSearch = raw_input("Search for song: ") # Reads input as a string
 # userSearch = input("Search for song (use quotes): ") # Reads input as raw code
-print("Searching for " + userSearch)
+# print("Searching for " + userSearch)
 userSearch = userSearch.strip() # Remove extraneous white space
 
 # Search for song in iTunes Store
@@ -34,16 +35,16 @@ for i in range(0, len(searchKeys)): # len() returns length of a variable
         appendStr += "&"
     finalURL += appendStr
 
-print("Final URL: " + finalURL)
+# print("Final URL: " + finalURL) # Debugging
 # webbrowser.open(finalURL)
 
 # Retrieve and Save iTunes JSON Data
 response = urllib2.urlopen(finalURL) #Get HTML source code
 html = response.read() #HTML source code
 soup = BeautifulSoup(html, "lxml") # Using lxml parser
-print()
+print("")
 print("*********** Found iTunes data ***********")
-print()
+print("")
 # print(soup.prettify()) # Feedback
 
 rawJSON = soup.find('p').text # Just the json text
@@ -89,7 +90,19 @@ iTunesObj = json.loads(rawJSON) # Decode JSON
 #     u'discCount': 1
 # }
 
-print("Track name: " + iTunesObj['results'][0]['trackName'])
-print("Artist: " +  iTunesObj['results'][0]['artistName'])
-print("Album: " +  iTunesObj['results'][0]['collectionName'])
-print("Genre: " +  iTunesObj['results'][0]['primaryGenreName'])
+results = iTunesObj['results']
+for i in range(0, 5):
+    sys.stdout.write("(%i) Track Name: " % i)
+    sys.stdout.flush() # No line break
+    print results[i]['trackName'] # Adds a line break after
+    print "    Artist: %s" % results[i]['artistName']
+    print "    Album: %s" % results[i]['collectionName']
+    print "    Genre: %s" % results[i]['primaryGenreName']
+    print("")
+
+print("Which song is the one you were looking for?")
+iTunesSearchSelection = input("Type the respective index: ")
+songData = results[iTunesSearchSelection]
+print "" # Line break
+print("Selected:")
+print "%s by %s" % (songData['trackName'], songData['artistName'])

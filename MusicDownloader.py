@@ -59,8 +59,10 @@ rawJSON.strip() # Trim the white space
 iTunesObj = json.loads(rawJSON) # Decode JSON
 # print(iTunesObj)
 
+numShow = 5
+
 results = iTunesObj['results']
-for i in range(0, 5):
+for i in range(0, numShow):
     sys.stdout.write("(%i) Track Name: " % i)
     sys.stdout.flush() # No line break
     print results[i]['trackName'] # Adds a line break after
@@ -92,17 +94,39 @@ html = response.read() #HTML source code
 soup = BeautifulSoup(html, "lxml") # Using lxml parser
 
 videoLinks = soup.findAll("a", { "class": "yt-uix-sessionlink yt-uix-tile-link yt-ui-ellipsis yt-ui-ellipsis-2       spf-link " })
-videoTimes = soup.findAll("span", { "class": "video-time" })
+videoUploaders = soup.findAll("a", { "class": "yt-uix-sessionlink g-hovercard      spf-link " })
+videoTimes = soup.findAll("div", { "class": "yt-lockup-thumbnail" }) # In case there are playlists, find the div
 
 videos = [];
 for i in range(0, len(videoTimes)):
-    videos.append(
-        [
-            videoLinks[i].contents[0],
-            videoLinks[i].get('href'),
-            videoTimes[i].contents[0]
-        ]
-    )
+    time = videoTimes[i].findAll("span", { "class": "video-time" }) # Find within the larger div
+    if not time: # If array is empty (ie. no time found for that video)
+        print "Found a playlist"
+    else: # If not a playlists
+        # The video must be a playlist
+        time = time[0] # First result
+        # print(videoLinks[i].contents[0])
+        # print(videoTimes[i])
+        # print(time)
+        videos.append(
+            [
+                videoLinks[i].contents[0],
+                videoLinks[i].get('href'),
+                videoUploaders[i].contents[0],
+                time.text
+            ]
+        )
 
-var = videos[0]
-print var[2]
+
+for i in range(0, numShow):
+    video = videos[i]
+    sys.stdout.write("(%i) Video name: " % i)
+    sys.stdout.flush() # No line break
+    print video[0] # Adds a line break after
+    print "    Link: %s" % video[1]
+    print "    Uploader: %s" % video[2]
+    print "    Length: %s" % video[3]
+    print("")
+
+# var = videos[0]
+# print var[2]

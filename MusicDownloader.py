@@ -141,13 +141,18 @@ print("The iTunes version is: %s" % songData['trackTimeMillis'])
 YouTubeSelection = input("Type the respective index: ")
 data = videos[YouTubeSelection]
 
+fileName = songData['artistName'] + " - " + songData['trackName']
+
 ydl_opts = {
     'format': 'bestaudio/best',
+    # 'outtmpl': u'%(title)s-%(id)s.%(ext)s',
+    'outtmpl': fileName + ".%(ext)s",
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'mp3',
         'preferredquality': '192',
     }],
 }
+
 with youtube_dl.YoutubeDL(ydl_opts) as ydl:
     ydl.download([data[1]])

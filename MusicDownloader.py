@@ -10,6 +10,7 @@ import urllib2 # Gets html
 import sys # Allow more control over printing
 import string # More ways to manipulate strings
 import unidecode # Decodes weird characters
+import youtube_dl # For downloading YouTube videos/audio
 
 # Prompt User for Keywords for Song
 userSearch = raw_input("Search for song: ") # Reads input as a string
@@ -79,7 +80,9 @@ print("Selected:")
 print "%s by %s" % (songData['trackName'], songData['artistName'])
 print "" # Line break
 
-# Find song on YouTube
+
+# *******************   Find song on YouTube   *******************
+
 baseURL = "https://www.youtube.com/results?search_query="
 YouTubeSearch = songData['trackName'] + " " + songData['artistName']
 
@@ -98,26 +101,31 @@ videoUploaders = soup.findAll("a", { "class": "yt-uix-sessionlink g-hovercard   
 videoTimes = soup.findAll("div", { "class": "yt-lockup-thumbnail" }) # In case there are playlists, find the div
 
 videos = [];
-for i in range(0, len(videoTimes)):
+# Stores all the results on the page except for the last 3 hits on the page
+upper = len(videoTimes) - 3
+for i in range(0, upper):
     time = videoTimes[i].findAll("span", { "class": "video-time" }) # Find within the larger div
     if not time: # If array is empty (ie. no time found for that video)
         print "Found a playlist"
     else: # If not a playlists
         # The video must be a playlist
         time = time[0] # First result
-        # print(videoLinks[i].contents[0])
-        # print(videoTimes[i])
-        # print(time)
+
+        link = "https://www.youtube.com" + videoLinks[i].get('href')
+
+        print videoLinks[i].contents[0]
+        # Structure of array:
+        # [name, link, uploader, length]
         videos.append(
             [
                 videoLinks[i].contents[0],
-                videoLinks[i].get('href'),
+                link,
                 videoUploaders[i].contents[0],
                 time.text
             ]
         )
 
-
+# Only returns up to specified number
 for i in range(0, numShow):
     video = videos[i]
     sys.stdout.write("(%i) Video name: " % i)
@@ -128,5 +136,18 @@ for i in range(0, numShow):
     print "    Length: %s" % video[3]
     print("")
 
-# var = videos[0]
-# print var[2]
+print("Which video is the one you were looking for?")
+print("The iTunes version is: %s" % songData['trackTimeMillis'])
+YouTubeSelection = input("Type the respective index: ")
+data = videos[YouTubeSelection]
+
+ydl_opts = {
+    'format': 'bestaudio/best',
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'mp3',
+        'preferredquality': '192',
+    }],
+}
+with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+    ydl.download([data[1]])

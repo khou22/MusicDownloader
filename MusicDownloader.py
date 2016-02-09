@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # Modules:
 import webbrowser # This module can control the browser
 import json # Json encoder/decoder
@@ -5,6 +8,8 @@ from bs4 import BeautifulSoup # Module to sort through HTML
 import lxml # Module to prepare html for BeautifulSoup
 import urllib2 # Gets html
 import sys # Allow more control over printing
+import string # More ways to manipulate strings
+import unidecode # Decodes weird characters
 
 # Prompt User for Keywords for Song
 userSearch = raw_input("Search for song: ") # Reads input as a string
@@ -54,42 +59,6 @@ rawJSON.strip() # Trim the white space
 iTunesObj = json.loads(rawJSON) # Decode JSON
 # print(iTunesObj)
 
-# Sample iTunes data for one song
-# {
-#     u'collectionExplicitness': u'notExplicit',
-#     u'releaseDate': u'2014-06-13T07:00:00Z',
-#     u'currency': u'USD',
-#     u'artistId': 4091218,
-#     u'previewUrl': u'http://a1434.phobos.apple.com/us/r1000/029/Music4/v4/90/73/cd/9073cd0b-d672-77d5-e405-0ebf47ecf80e/mzaf_1792261294529959695.plus.aac.p.m4a',
-#     u'trackPrice': 1.29,
-#     u'isStreamable': True,
-#     u'trackViewUrl': u'https://itunes.apple.com/us/album/red-lights/id872899091?i=872899097&uo=4',
-#     u'collectionName': u'A Town Called Paradise (Deluxe)',
-#     u'collectionId': 872899091,
-#     u'trackId': 872899097,
-#     u'collectionViewUrl': u'https://itunes.apple.com/us/album/red-lights/id872899091?i=872899097&uo=4',
-#     u'trackCount': 17,
-#     u'trackNumber': 1,
-#     u'discNumber': 1,
-#     u'collectionPrice': 12.99,
-#     u'trackCensoredName': u'Red Lights',
-#     u'trackName': u'Red Lights',
-#     u'trackTimeMillis': 262200,
-#     u'primaryGenreName': u'Dance',
-#     u'artistViewUrl': u'https://itunes.apple.com/us/artist/tiesto/id4091218?uo=4',
-#     u'kind': u'song',
-#     u'country': u'USA',
-#     u'wrapperType': u'track',
-#     u'artworkUrl100': u'http://is5.mzstatic.com/image/thumb/Music4/v4/1d/d2/7e/1dd27e62-8296-9468-2131-1d8a8be1de9b/source/100x100bb.jpg',
-#     u'collectionCensoredName': u'A Town Called Paradise (Deluxe)',
-#     u'radioStationUrl': u'https://itunes.apple.com/station/idra.872899097',
-#     u'artistName': u'Ti\xebsto',
-#     u'artworkUrl60': u'http://is5.mzstatic.com/image/thumb/Music4/v4/1d/d2/7e/1dd27e62-8296-9468-2131-1d8a8be1de9b/source/60x60bb.jpg',
-#     u'trackExplicitness': u'notExplicit',
-#     u'artworkUrl30': u'http://is5.mzstatic.com/image/thumb/Music4/v4/1d/d2/7e/1dd27e62-8296-9468-2131-1d8a8be1de9b/source/30x30bb.jpg',
-#     u'discCount': 1
-# }
-
 results = iTunesObj['results']
 for i in range(0, 5):
     sys.stdout.write("(%i) Track Name: " % i)
@@ -106,3 +75,34 @@ songData = results[iTunesSearchSelection]
 print "" # Line break
 print("Selected:")
 print "%s by %s" % (songData['trackName'], songData['artistName'])
+print "" # Line break
+
+# Find song on YouTube
+baseURL = "https://www.youtube.com/results?search_query="
+YouTubeSearch = songData['trackName'] + " " + songData['artistName']
+
+YouTubeSearch = unidecode.unidecode(YouTubeSearch) # Remove complex unicode characters
+print "Searching for '%s' on YouTube" % YouTubeSearch
+out = YouTubeSearch.translate(string.maketrans("",""), string.punctuation) # Remove punctuation
+YouTubeSearch = YouTubeSearch.replace(" ", "+") # Remove spaces with '+'
+finalURL = baseURL + YouTubeSearch
+
+response = urllib2.urlopen(finalURL) #Get HTML source code
+html = response.read() #HTML source code
+soup = BeautifulSoup(html, "lxml") # Using lxml parser
+
+videoLinks = soup.findAll("a", { "class": "yt-uix-sessionlink yt-uix-tile-link yt-ui-ellipsis yt-ui-ellipsis-2       spf-link " })
+videoTimes = soup.findAll("span", { "class": "video-time" })
+
+videos = [];
+for i in range(0, len(videoTimes)):
+    videos.append(
+        [
+            videoLinks[i].contents[0],
+            videoLinks[i].get('href'),
+            videoTimes[i].contents[0]
+        ]
+    )
+
+var = videos[0]
+print var[2]

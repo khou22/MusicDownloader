@@ -11,6 +11,8 @@ import sys # Allow more control over printing
 import string # More ways to manipulate strings
 import unidecode # Decodes weird characters
 import youtube_dl # For downloading YouTube videos/audio
+import eyed3 # For editing ID3 tags for mp3 file
+import os # More control over Mac file system
 
 # Prompt User for Keywords for Song
 userSearch = raw_input("Search for song: ") # Reads input as a string
@@ -141,12 +143,13 @@ print("The iTunes version is: %s" % songData['trackTimeMillis'])
 YouTubeSelection = input("Type the respective index: ")
 data = videos[YouTubeSelection]
 
-fileName = songData['artistName'] + " - " + songData['trackName']
+fileName = songData['artistName'] + " - " + songData['trackName'] # Declare file name
+filePath = "~/Desktop/" # Declare file path
 
-ydl_opts = {
+ydl_opts = { # Set options
     'format': 'bestaudio/best',
     # 'outtmpl': u'%(title)s-%(id)s.%(ext)s',
-    'outtmpl': fileName + ".%(ext)s",
+    'outtmpl': filePath + fileName + ".%(ext)s",
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'mp3',
@@ -155,4 +158,19 @@ ydl_opts = {
 }
 
 with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-    ydl.download([data[1]])
+    ydl.download([data[1]]) # Download the song
+
+# *******************   Update ID3 Tags   *******************
+
+mp3Path = os.path.expanduser("~/Desktop/" + fileName + ".mp3")
+
+audiofile = eyed3.load(mp3Path)
+audiofile.tag.title = songData['trackName']
+audiofile.tag.artist = songData['artistName']
+audiofile.tag.album = songData['collectionName']
+audiofile.tag.album_artist = songData['artistName'] # This needs to be changed - need to be able to find album artist, not song artist
+audiofile.tag.track_num = songData['trackNumber']
+
+audiofile.tag.save()
+
+print "Updated ID3 Tags"

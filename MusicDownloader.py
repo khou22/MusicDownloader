@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# Started: February 7, 2016
+# Finished: February 9, 2016
+
 # Modules:
 import webbrowser # This module can control the browser
 import json # Json encoder/decoder

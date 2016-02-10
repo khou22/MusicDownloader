@@ -138,8 +138,16 @@ for i in range(0, numShow):
     print "    Length: %s" % video[3]
     print("")
 
-print("Which video is the one you were looking for?")
-print("The iTunes version is: %s" % songData['trackTimeMillis'])
+milliseconds = songData['trackTimeMillis']
+x = milliseconds / 1000
+seconds = x % 60
+x /= 60
+minutes = x % 60
+
+time = str(minutes) + ":" + str(seconds)
+
+print "Which video is the one you were looking for?"
+print "The iTunes version is: %s" % time
 YouTubeSelection = input("Type the respective index: ")
 data = videos[YouTubeSelection]
 
@@ -170,6 +178,8 @@ audiofile.tag.artist = songData['artistName']
 audiofile.tag.album = songData['collectionName']
 audiofile.tag.album_artist = songData['artistName'] # This needs to be changed - need to be able to find album artist, not song artist
 audiofile.tag.track_num = songData['trackNumber']
+audiofile.tag.genre = songData['primaryGenreName']
+audiofile.tag.date = songData['releaseDate']
 
 audiofile.tag.save()
 

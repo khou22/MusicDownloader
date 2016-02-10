@@ -149,6 +149,7 @@ time = str(minutes) + ":" + str(seconds)
 print "Which video is the one you were looking for?"
 print "The iTunes version is: %s" % time
 YouTubeSelection = input("Type the respective index: ")
+print "" # Line break
 data = videos[YouTubeSelection]
 
 fileName = songData['artistName'] + " - " + songData['trackName'] # Declare file name
@@ -171,16 +172,20 @@ with youtube_dl.YoutubeDL(ydl_opts) as ydl:
 # *******************   Update ID3 Tags   *******************
 
 mp3Path = os.path.expanduser("~/Desktop/" + fileName + ".mp3")
+year = str(songData['releaseDate'])
+year = int(year[:4])
 
 audiofile = eyed3.load(mp3Path)
 audiofile.tag.title = songData['trackName']
 audiofile.tag.artist = songData['artistName']
 audiofile.tag.album = songData['collectionName']
 audiofile.tag.album_artist = songData['artistName'] # This needs to be changed - need to be able to find album artist, not song artist
-audiofile.tag.track_num = songData['trackNumber']
+audiofile.tag.track_num = (songData['trackNumber'], songData['trackCount'])
+audiofile.tag.disc_num = (songData['discNumber'], songData['discCount'])
 audiofile.tag.genre = songData['primaryGenreName']
-audiofile.tag.date = songData['releaseDate']
+audiofile.tag.release_year = year
 
 audiofile.tag.save()
 
+print "" # Line break
 print "Updated ID3 Tags"

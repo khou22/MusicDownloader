@@ -189,3 +189,5 @@ audiofile.tag.save()
 
 print "" # Line break
 print "Updated ID3 Tags"
+print "" # Line break
+print "**************   Complete   **************"

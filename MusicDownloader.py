@@ -85,11 +85,18 @@ print "" # Line break
 
 # *******************   Find song on YouTube   *******************
 
+searchAudio = raw_input("Search for audio video? (y/n) ") # Ask if want to search for audio on YouTube
+extra = ""
+if searchAudio is "y": # If only want to search for audio videos
+    extra = " audio" # add on 'audio' to search
+
 baseURL = "https://www.youtube.com/results?search_query="
-YouTubeSearch = songData['trackName'] + " " + songData['artistName']
+YouTubeSearch = songData['trackName'] + " " + songData['artistName'] + extra
+print "" # Line break
 
 YouTubeSearch = unidecode.unidecode(YouTubeSearch) # Remove complex unicode characters
 print "Searching for '%s' on YouTube" % YouTubeSearch
+print "" # Line break
 out = YouTubeSearch.translate(string.maketrans("",""), string.punctuation) # Remove punctuation
 YouTubeSearch = YouTubeSearch.replace(" ", "+") # Remove spaces with '+'
 finalURL = baseURL + YouTubeSearch
@@ -115,7 +122,7 @@ for i in range(0, upper):
 
         link = "https://www.youtube.com" + videoLinks[i].get('href')
 
-        print videoLinks[i].contents[0]
+        # print videoLinks[i].contents[0]
         # Structure of array:
         # [name, link, uploader, length]
         videos.append(
@@ -189,5 +196,6 @@ audiofile.tag.save()
 
 print "" # Line break
 print "Updated ID3 Tags"
+print "Song Year (Must Manually Add): %s" % year
 print "" # Line break
 print "**************   Complete   **************"

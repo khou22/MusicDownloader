@@ -3,6 +3,7 @@
 
 # Started: February 7, 2016
 # Finished: February 9, 2016
+# GitHub Repository Name: MusicDownloader
 
 # Modules:
 import webbrowser # This module can control the browser
@@ -91,7 +92,7 @@ print "" # Line break
 searchAudio = raw_input("Search for audio video? (y/n) ") # Ask if want to search for audio on YouTube
 extra = ""
 if searchAudio is "y": # If only want to search for audio videos
-    extra = " audio" # add on 'audio' to search
+    extra = " Audio" # add on 'audio' to search
 
 baseURL = "https://www.youtube.com/results?search_query="
 YouTubeSearch = songData['trackName'] + " " + songData['artistName'] + extra

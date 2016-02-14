@@ -31,6 +31,7 @@ searchKeys = [
     ["term", userSearch],
     ["country", "US"],
     ["media", "music"],
+    ["entity", "song"],
     ["limit", "50"],
     ["lang", "en_us"],
     ["explicit", "yes"]
@@ -72,7 +73,7 @@ results = iTunesObj['results']
 b = numShow
 if len(results) < numShow:
     b = len(results)
-    
+
 for i in range(0, b):
     sys.stdout.write("(%i) Track Name: " % i)
     sys.stdout.flush() # No line break

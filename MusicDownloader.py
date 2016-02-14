@@ -69,7 +69,11 @@ iTunesObj = json.loads(rawJSON) # Decode JSON
 numShow = 5
 
 results = iTunesObj['results']
-for i in range(0, numShow):
+b = numShow
+if len(results) < numShow:
+    b = len(results)
+    
+for i in range(0, b):
     sys.stdout.write("(%i) Track Name: " % i)
     sys.stdout.flush() # No line break
     print results[i]['trackName'] # Adds a line break after

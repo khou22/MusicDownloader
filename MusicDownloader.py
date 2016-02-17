@@ -108,7 +108,7 @@ print "Searching for '%s' on YouTube" % YouTubeSearch
 print "" # Line break
 out = YouTubeSearch.translate(string.maketrans("",""), string.punctuation) # Remove punctuation
 YouTubeSearch = YouTubeSearch.replace(" ", "+") # Remove spaces with '+'
-finalURL = baseURL + YouTubeSearch
+finalURL = baseURL + YouTubeSearch # Final URL
 
 response = urllib2.urlopen(finalURL) #Get HTML source code
 html = response.read() #HTML source code

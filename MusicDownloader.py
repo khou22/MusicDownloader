@@ -185,6 +185,11 @@ ydl_opts = { # Set options
 with youtube_dl.YoutubeDL(ydl_opts) as ydl:
     ydl.download([data[1]]) # Download the song
 
+# *******************   Find Image Artwork   *******************
+# print("Finding Google Image for album artwork")
+# Add code here:
+
+
 # *******************   Update ID3 Tags   *******************
 
 mp3Path = os.path.expanduser("~/Desktop/" + fileName + ".mp3")
@@ -199,7 +204,11 @@ audiofile.tag.album_artist = songData['artistName'] # This needs to be changed -
 audiofile.tag.track_num = (songData['trackNumber'], songData['trackCount'])
 audiofile.tag.disc_num = (songData['discNumber'], songData['discCount'])
 audiofile.tag.genre = songData['primaryGenreName']
-audiofile.tag.release_year = year
+audiofile.tag.year = year
+
+# Append Image
+# imageData = open("test.jpg", "rb").read() # Stores image data
+# audiofile.tag.images.set(3, imageData, "image/jpeg", "Description") # 3 for front cover, 4 for back, 0 for other
 
 audiofile.tag.save()
 

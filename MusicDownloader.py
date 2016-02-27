@@ -178,7 +178,7 @@ ydl_opts = { # Set options
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'mp3',
-        'preferredquality': '192',
+        'preferredquality': '192' # 128, 160, 192, 210, 256
     }],
 }
 
@@ -207,6 +207,7 @@ audiofile.tag.genre = songData['primaryGenreName']
 audiofile.tag.year = year
 
 # Append Image
+# Reference: http://tuxpool.blogspot.com/2013/02/how-to-store-images-in-mp3-files-using.html
 # imageData = open("test.jpg", "rb").read() # Stores image data
 # audiofile.tag.images.set(3, imageData, "image/jpeg", "Description") # 3 for front cover, 4 for back, 0 for other
 

@@ -121,10 +121,12 @@ videoTimes = soup.findAll("div", { "class": "yt-lockup-thumbnail" }) # In case t
 videos = [];
 # Stores all the results on the page except for the last 3 hits on the page
 upper = len(videoTimes) - 3
+numPlaylists = 0
 for i in range(0, upper):
     time = videoTimes[i].findAll("span", { "class": "video-time" }) # Find within the larger div
     if not time: # If array is empty (ie. no time found for that video)
-        print "Found a playlist"
+        numPlaylists += 1
+        # print "Found a playlist"
     else: # If not a playlists
         # The video must be a playlist
         time = time[0] # First result
@@ -144,6 +146,7 @@ for i in range(0, upper):
         )
 
 # Only returns up to specified number
+print "Found %s playlist(s)" % numPlaylists
 for i in range(0, numShow):
     video = videos[i]
     sys.stdout.write("(%i) Video name: " % i)

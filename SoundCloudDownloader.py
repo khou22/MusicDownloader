@@ -29,3 +29,15 @@ ydl_opts = { # Set options
 
 with youtube_dl.YoutubeDL(ydl_opts) as ydl:
     ydl.download([soundCloudLink]) # Download the song
+
+
+# *******************   Update ID3 Tags   *******************
+
+mp3Path = os.path.expanduser("~/Desktop/" + fileName + ".mp3")
+
+audiofile = eyed3.load(mp3Path) # Load file
+
+# Set data
+audiofile.tag.title = "Name of Song"
+
+audiofile.tag.save(); # Save meta data

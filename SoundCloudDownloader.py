@@ -65,7 +65,7 @@ else: # If no "by" in song title
     songData = re.split("by", pageName)  # Split track and artist
     listedTrackName = songData[0].strip()
     newPotentialData("trackName", listedTrackName)  # Trim whitespace and store
-    cropArtist = songData[1][0:songData[1].index("| Free Listening on SoundCloud")]  # Crop the string to only have artist name
+    cropArtist = songData[1][0:songData[1].index("| ")]  # Crop the string to only have artist name
     newPotentialData("artist", cropArtist.strip())  # Trim whitespace and store
 print ""  # Line break
 

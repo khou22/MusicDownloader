@@ -203,8 +203,10 @@ if chosenIndex is 0:
         correct = raw_input("Done (y/n): ")  # Allow user to undo and go again
         if correct is "y":
             correctInput = True
-    artist = customArtist  # Set final track name
-else:  # If chose a suggested track name
+    artist = customArtist  # Set final artist name
+    artist = customArtist.decode('unicode-escape')
+
+else:  # If chose a suggested artist name
     index = chosenIndex - 1  # Set index
     artist = potentialArtists[index]  # Set final
 print ""  # Line break
@@ -286,6 +288,7 @@ print ""  # Line break
 
 
 # *******************   Set Remaining Values   *******************
+trackName = trackName[2:len(trackName)]
 # Default is a single
 album = trackName + " - Single"
 albumArtist = artist
@@ -337,7 +340,11 @@ audiofile.tag.album_artist = albumArtist
 audiofile.tag.track_num = (trackNum[0], trackNum[1])
 audiofile.tag.disc_num = (discNumber, discCount)
 audiofile.tag.genre = genre
-audiofile.tag.year = year
+audiofile.tag.release_date = year
+audiofile.tag.orig_release_date = year
+audiofile.tag.recording_date = year
+audiofile.tag.encoding_date = year
+audiofile.tag.taggin_date = year
 
 # Append Image
 # Reference: http://tuxpool.blogspot.com/2013/02/how-to-store-images-in-mp3-files-using.html

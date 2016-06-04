@@ -207,7 +207,11 @@ audiofile.tag.album_artist = songData['artistName'] # This needs to be changed -
 audiofile.tag.track_num = (songData['trackNumber'], songData['trackCount'])
 audiofile.tag.disc_num = (songData['discNumber'], songData['discCount'])
 audiofile.tag.genre = songData['primaryGenreName']
-audiofile.tag.year = year
+audiofile.tag.release_date = year
+audiofile.tag.orig_release_date = year
+audiofile.tag.recording_date = year
+audiofile.tag.encoding_date = year
+audiofile.tag.taggin_date = year
 
 # Append Image
 # Reference: http://tuxpool.blogspot.com/2013/02/how-to-store-images-in-mp3-files-using.html
@@ -218,6 +222,6 @@ audiofile.tag.save()
 
 print "" # Line break
 print "Updated ID3 Tags"
-print "Song Year (Must Manually Add): %s" % year
+# print "Song Year (Must Manually Add): %s" % year
 print "" # Line break
 print "**************   Complete   **************"

@@ -184,6 +184,7 @@ if chosenIndex is 0:
         if correct is "y":
             correctInput = True
     trackName = customTrackName  # Set final track name
+    trackName = trackName.decode('unicode-escape')  # Input must be unicode
 else:  # If chose a suggested track name
     index = chosenIndex - 1  # Set index
     trackName = potentialTrackNames[index]  # Set final
@@ -204,7 +205,7 @@ if chosenIndex is 0:
         if correct is "y":
             correctInput = True
     artist = customArtist  # Set final artist name
-    artist = customArtist.decode('unicode-escape')
+    artist = customArtist.decode('unicode-escape')  # Input must be unicode
 
 else:  # If chose a suggested artist name
     index = chosenIndex - 1  # Set index
@@ -281,6 +282,7 @@ if chosenIndex is 0:
         if correct is "y":
             correctInput = True
     genre = customGenre  # Set final track name
+    genre = customGenre.decode('unicode-escape')  # Input must be unicode
 else:  # If chose a suggested track name
     index = chosenIndex - 1  # Set index
     genre = potentialGenres[index]  # Set final
@@ -288,7 +290,15 @@ print ""  # Line break
 
 
 # *******************   Set Remaining Values   *******************
-trackName = trackName[2:len(trackName)]
+if len(re.split("\u", trackName)) == 0:  # If was unicode
+    trackName = trackName[2:len(trackName)]
+
+if len(re.split("\u", artist)) == 0:  # If was unicode
+    artist = artist[2:len(artist)]
+
+if len(re.split("\u", genre)) == 0:  # If was unicode
+    genre = genre[2:len(genre)]
+
 # Default is a single
 album = trackName + " - Single"
 albumArtist = artist
@@ -362,3 +372,6 @@ audiofile.tag.images.set(3, imagedata, "image/jpeg", u"Album Artwork") # Append 
 os.remove("albumArtwork.jpg")  # Delete local image immediately after appending
 
 audiofile.tag.save();  # Save meta data
+
+print "Updated ID3 Tags"
+print "**************   Complete   **************"

@@ -195,7 +195,7 @@ with youtube_dl.YoutubeDL(ydl_opts) as ydl:
 
 # *******************   Update ID3 Tags   *******************
 
-mp3Path = os.path.expanduser("~/Desktop/" + fileName + ".mp3")
+mp3Path = os.path.expanduser(filePath + fileName + ".mp3")
 year = str(songData['releaseDate'])
 year = int(year[:4])
 

@@ -44,7 +44,7 @@ genre = ""
 # Initialize arrays
 potentialArtists = []
 potentialTrackNames = []
-potentialGenres = []
+potentialGenres = [] # Will be a double array. Store the frequency the artist produces for each genre as well
 
 listedTrackName = ""  # What the song is listed as (could include name of artist)
 

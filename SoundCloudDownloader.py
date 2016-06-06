@@ -20,8 +20,11 @@ import requests
 
 # Prompt user for SoundCloud link
 soundCloudLink = raw_input("SoundCloud Link: ")  # Prompt for link (inputs as String type)
-# soundCloudLink = "https://soundcloud.com/donnietrumpet/the-first-time"  # For testing
-# soundCloudLink = "https://soundcloud.com/descentintonice/justin-timberlake-cant-stop-the-feeling"  # For testing name of song in listed track name
+
+# Get ride of any trailing, extraneous information in the URL
+if (len(re.split("\?", soundCloudLink)) > 0):  # If song is part of playlist
+    soundCloudLink = soundCloudLink[0:soundCloudLink.index("?in=")]  # Chop off the end
+    print "Proper link: %s" % soundCloudLink
 
 # *******************   Get Track Data   *******************
 response = urllib2.urlopen(soundCloudLink)  # Get HTML source code
@@ -270,20 +273,30 @@ for i in range(0, len(iTunesObj['results'])):  # Cycle through all songs by that
 print "Potential genre names:"
 print "0: Custom entry"  # Allow for a custom entry
 for i in range(0, len(potentialGenres)):  # Cycle through all possibilities
-    index = i + 1
+    index = i + 1  # Offset
     print "%s: %s" % (index, potentialGenres[i])
 chosenIndex = input("Choose a genre name: ")  # Prompt for link (inputs as String type)
 
 if chosenIndex is 0:
-    correctInput = False
-    while correctInput is False:  # Cycle until correctly type in entry
-        customGenre = raw_input("Genre: ")  # Allow for custom entry
-        correct = raw_input("Done (y/n): ")  # Allow user to undo and go again
-        if correct is "y":
-            correctInput = True
-    genre = customGenre  # Set final track name
-    genre = customGenre.decode('unicode-escape')  # Input must be unicode
-else:  # If chose a suggested track name
+    print ""  # Line break
+    iTunesSuggested = raw_input("Select from my common iTunes genres? (y/n) ")
+    if iTunesSuggested is "y":  # If choosing from generic list
+        commonGenres = ["Alternative", "Dance", "Electronic", "Hip-Hop/Rap", "House", "Pop"]  # Based off my current iTunes library
+        for i in range(0, len(commonGenres)):  # Cycle through my common genres
+            index = i + 1  # Offset
+            print "%s: %s" % (index, commonGenres[i])
+        chosenIndex = input("Choose a genre name: ")  # Prompt for link (inputs as String type)
+        genre = commonGenres[chosenIndex - 1].decode('unicode-escape')  # Compensate for offset
+    else:  # If completely custom
+        correctInput = False
+        while correctInput is False:  # Cycle until correctly type in entry
+            customGenre = raw_input("Genre: ")  # Allow for custom entry
+            correct = raw_input("Done (y/n): ")  # Allow user to undo and go again
+            if correct is "y":
+                correctInput = True
+        genre = customGenre  # Set final track name
+        genre = customGenre.decode('unicode-escape')  # Input must be unicode
+else:  # If chose a suggested genre
     index = chosenIndex - 1  # Set index
     genre = potentialGenres[index]  # Set final
 print ""  # Line break

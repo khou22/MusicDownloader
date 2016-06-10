@@ -22,7 +22,7 @@ import requests
 soundCloudLink = raw_input("SoundCloud Link: ")  # Prompt for link (inputs as String type)
 
 # Get ride of any trailing, extraneous information in the URL
-if (len(re.split("\?", soundCloudLink)) > 0):  # If song is part of playlist
+if (len(re.split("\?", soundCloudLink)) > 1):  # If song is part of playlist
     soundCloudLink = soundCloudLink[0:soundCloudLink.index("?in=")]  # Chop off the end
     print "Proper link: %s" % soundCloudLink
 

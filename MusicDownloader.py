@@ -115,14 +115,16 @@ html = response.read() #HTML source code
 soup = BeautifulSoup(html, "lxml") # Using lxml parser
 
 videoLinks = soup.findAll("a", { "class": "yt-uix-sessionlink yt-uix-tile-link yt-ui-ellipsis yt-ui-ellipsis-2       spf-link " })
-videoUploaders = soup.findAll("a", { "class": "yt-uix-sessionlink g-hovercard      spf-link " })
+videoUploaders = soup.findAll("a", { "class": "g-hovercard yt-uix-sessionlink      spf-link " })
 videoTimes = soup.findAll("div", { "class": "yt-lockup-thumbnail" }) # In case there are playlists, find the div
+# print len(videoUploaders)
 
 videos = [];
 # Stores all the results on the page except for the last 3 hits on the page
 upper = len(videoTimes) - 3
 numPlaylists = 0
 for i in range(0, upper):
+    # print i
     time = videoTimes[i].findAll("span", { "class": "video-time" }) # Find within the larger div
     if not time: # If array is empty (ie. no time found for that video)
         numPlaylists += 1
@@ -132,6 +134,9 @@ for i in range(0, upper):
         time = time[0] # First result
 
         link = "https://www.youtube.com" + videoLinks[i].get('href')
+        # print link
+
+        # print videoUploaders[i]
 
         # print videoLinks[i].contents[0]
         # Structure of array:

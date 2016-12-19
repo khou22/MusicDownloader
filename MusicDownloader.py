@@ -126,7 +126,8 @@ videoUploaders = [] # Start empty
 videoUploaderElements = soup.findAll("div", { "class": "yt-lockup-byline " }) # Get video uploader divs
 for element in videoUploaderElements:
     uploader = element.findAll("a") # Extract the uploader link
-    videoUploaders.append(uploader[0]) # Append to master list
+    if len(uploader) is not 0:
+        videoUploaders.append(uploader[0]) # Append to master list
 
 videoTimes = soup.findAll("div", { "class": "yt-lockup-thumbnail" }) # In case there are playlists, find the div
 
@@ -136,6 +137,7 @@ upper = len(videoTimes) - 3
 numPlaylists = 0
 for i in range(0, upper):
     # print i
+    # print(videoTimes[i])
     time = videoTimes[i].findAll("span", { "class": "video-time" }) # Find within the larger div
     if not time: # If array is empty (ie. no time found for that video)
         numPlaylists += 1

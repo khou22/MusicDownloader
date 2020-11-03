@@ -6,11 +6,14 @@
 # GitHub Repository Name: MusicDownloader
 
 # Modules:
+from PIL import Image
+import requests
+from io import BytesIO
 import webbrowser # This module can control the browser
 import json # Json encoder/decoder
 from bs4 import BeautifulSoup # Module to sort through HTML
 import lxml # Module to prepare html for BeautifulSoup
-import urllib2 # Gets html
+from urllib.request import urlopen
 import sys # Allow more control over printing
 import string # More ways to manipulate strings
 import unidecode # Decodes weird characters
@@ -18,8 +21,10 @@ import youtube_dl # For downloading YouTube videos/audio
 import eyed3 # For editing ID3 tags for mp3 file
 import os # More control over Mac file system
 
+numShow = 5
+
 # Prompt User for Keywords for Song
-userSearch = raw_input("Search for song: ") # Reads input as a string
+userSearch = input("Search for song: ") # Reads input as a string
 # userSearch = input("Search for song (use quotes): ") # Reads input as raw code
 # print("Searching for " + userSearch)
 userSearch = userSearch.strip() # Remove extraneous white space
@@ -52,7 +57,7 @@ for i in range(0, len(searchKeys)): # len() returns length of a variable
 # webbrowser.open(finalURL)
 
 # Retrieve and Save iTunes JSON Data
-response = urllib2.urlopen(finalURL) #Get HTML source code
+response = urlopen(finalURL) #Get HTML source code
 html = response.read() #HTML source code
 soup = BeautifulSoup(html, "lxml") # Using lxml parser
 print("")
@@ -67,8 +72,6 @@ rawJSON.strip() # Trim the white space
 iTunesObj = json.loads(rawJSON) # Decode JSON
 # print(iTunesObj)
 
-numShow = 5
-
 results = iTunesObj['results']
 b = numShow
 if len(results) < numShow:
@@ -77,48 +80,56 @@ if len(results) < numShow:
 for i in range(0, b):
     sys.stdout.write("(%i) Track Name: " % i)
     sys.stdout.flush() # No line break
-    print results[i]['trackName'] # Adds a line break after
-    print "    Artist: %s" % results[i]['artistName']
-    print "    Album: %s" % results[i]['collectionName']
-    print "    Genre: %s" % results[i]['primaryGenreName']
+    print(results[i]['trackName']) # Adds a line break after
+    print("    Artist: %s" % results[i]['artistName'])
+    print("    Album: %s" % results[i]['collectionName'])
+    print("    Genre: %s" % results[i]['primaryGenreName'])
     print("")
 
 print("Which song is the one you were looking for?")
 iTunesSearchSelection = input("Type the respective index: ")
-songData = results[iTunesSearchSelection]
-print "" # Line break
+songData = results[int(iTunesSearchSelection)]
+print() # Line break
 print("Selected:")
-print "%s by %s" % (songData['trackName'], songData['artistName'])
-print "" # Line break
+print("%s by %s" % (songData['trackName'], songData['artistName']))
+print(songData)
+print() # Line break
 
 
 # *******************   Find song on YouTube   *******************
 
-searchAudio = raw_input("Search for audio video? (y/n) ") # Ask if want to search for audio on YouTube
+searchAudio = input("Search for audio video? (y/n) ") # Ask if want to search for audio on YouTube
 extra = ""
 if searchAudio is "y": # If only want to search for audio videos
     extra = " Audio" # add on 'audio' to search
 
 baseURL = "https://www.youtube.com/results?search_query="
 YouTubeSearch = songData['trackName'] + " " + songData['artistName'] + extra
-print "" # Line break
+print() # Line break
 
 YouTubeSearch = unidecode.unidecode(YouTubeSearch) # Remove complex unicode characters
-print "Searching for '%s' on YouTube" % YouTubeSearch
-print "" # Line break
-out = YouTubeSearch.translate(string.maketrans("",""), string.punctuation) # Remove punctuation
+print("Searching for '%s' on YouTube" % YouTubeSearch)
+print() # Line break
+# out = YouTubeSearch.translate(string.maketrans("",""), string.punctuation) # Remove punctuation
 YouTubeSearch = YouTubeSearch.replace(" ", "+") # Remove spaces with '+'
 finalURL = baseURL + YouTubeSearch # Final URL
 
-# print(finalURL)
+print(finalURL)
 
-response = urllib2.urlopen(finalURL) #Get HTML source code
+"""
+response = urllib.urlopen(finalURL) #Get HTML source code
 html = response.read() #HTML source code
 soup = BeautifulSoup(html, "lxml") # Using lxml parser
 
+links = soup.find_all("a")
+print(links)
+
 videoLinks = [] # Start empty
-videoTitleElements = soup.findAll("h3", { "class": "yt-lockup-title " }) # Get video titles then get video links
+# videoTitleElements = soup.findAll("h3", { "class": "title-and-badge style-scope ytd-video-renderer" }) # Get video titles then get video links
+videoTitleElements = soup.findAll("a", { "id": "video-title" }) # Get video titles then get video links
+print(videoTitleElements)
 for title in videoTitleElements:
+    print("Found title %s" % title)
     link = title.findAll("a") # Get link within the title
     videoLinks.append(link[0]) # Add link to master list
 
@@ -129,7 +140,7 @@ for element in videoUploaderElements:
     if len(uploader) is not 0:
         videoUploaders.append(uploader[0]) # Append to master list
 
-videoTimes = soup.findAll("div", { "class": "yt-lockup-thumbnail" }) # In case there are playlists, find the div
+videoTimes = soup.findAll("div", { "class": "ytd-thumbnail-overlay-time-status-renderer" }) # In case there are playlists, find the div
 
 videos = [];
 # Stores all the results on the page except for the last 3 hits on the page
@@ -188,6 +199,12 @@ print "The iTunes version is: %s" % time
 YouTubeSelection = input("Type the respective index: ")
 print "" # Line break
 data = videos[YouTubeSelection]
+"""
+
+# Manual link input
+print("Which video is the one you were looking for?")
+link = input("copy paste the link: ")
+data = ['', link]
 
 fileName = songData['artistName'] + " - " + songData['trackName'] # Declare file name
 filePath = "~/Desktop/" # Declare file path
@@ -201,9 +218,11 @@ ydl_opts = { # Set options
         'preferredcodec': 'mp3',
         'preferredquality': '192' # 128, 160, 192, 210, 256
     }],
+    'quiet': False
 }
 
 with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+    print(data[1])
     ydl.download([data[1]]) # Download the song
 
 # *******************   Find Image Artwork   *******************
@@ -231,15 +250,19 @@ audiofile.tag.recording_date = year
 audiofile.tag.encoding_date = year
 audiofile.tag.taggin_date = year
 
+
 # Append Image
 # Reference: http://tuxpool.blogspot.com/2013/02/how-to-store-images-in-mp3-files-using.html
+image_url = songData['artworkUrl100'].replace('100x100', '500x500')
+response = requests.get(image_url)
+# img = Image.open(BytesIO(response.content).read())
 # imageData = open("test.jpg", "rb").read() # Stores image data
-# audiofile.tag.images.set(3, imageData, "image/jpeg", "Description") # 3 for front cover, 4 for back, 0 for other
+audiofile.tag.images.set(3, BytesIO(response.content).read(), "image/jpeg", "Description") # 3 for front cover, 4 for back, 0 for other
 
 audiofile.tag.save()
 
-print "" # Line break
-print "Updated ID3 Tags"
+print() # Line break
+print("Updated ID3 Tags")
 # print "Song Year (Must Manually Add): %s" % year
-print "" # Line break
-print "**************   Complete   **************"
+print() # Line break
+print("**************   Complete   **************")

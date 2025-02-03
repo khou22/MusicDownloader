@@ -14,6 +14,7 @@ from urllib.request import urlopen
 import yt_dlp as youtube_dl
 import eyed3
 import os
+import inquirer
 
 
 def get_itunes_metadata(search_query: str, num_results: int = 5) -> dict:
@@ -57,19 +58,31 @@ def get_itunes_metadata(search_query: str, num_results: int = 5) -> dict:
     itunes_obj = json.loads(raw_json)
     results = itunes_obj["results"]
 
-    # Show results to user
-    print("\n*********** Found iTunes data ***********\n")
+    if not results:
+        print("No results found.")
+        return None
+
+    # Create choices for inquirer
+    choices = []
     for i in range(min(num_results, len(results))):
-        print(f"({i}) Track Name: {results[i]['trackName']}")
-        print(f"    Artist: {results[i]['artistName']}")
-        print(f"    Album: {results[i]['collectionName']}")
-        print(f"    Genre: {results[i]['primaryGenreName']}\n")
+        song = results[i]
+        display_name = f"{song['trackName']} - by {song['artistName']} (Album: {song['collectionName']}, Genre: {song['primaryGenreName']})"
+        choices.append((display_name, i))
+
+    # Create and show selection prompt
+    questions = [
+        inquirer.List(
+            "song", message="Select the correct song", choices=choices, carousel=True
+        )
+    ]
 
     # Get user selection
-    selection = int(
-        input("Which song is the one you were looking for? Type the index: ")
-    )
-    return results[selection]
+    answers = inquirer.prompt(questions)
+    if not answers:
+        print("Selection cancelled.")
+        return None
+
+    return results[answers["song"]]
 
 
 def download_youtube_audio(
@@ -89,20 +102,60 @@ def download_youtube_audio(
     file_name = f"{song_data['artistName']} - {song_data['trackName']}"
 
     ydl_opts = {
-        "format": "bestaudio/best",
-        "outtmpl": file_path + file_name + ".%(ext)s",
-        "postprocessors": [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "192",
-            }
-        ],
-        "quiet": False,
+        'format': 'bestaudio/best',
+        'outtmpl': file_path + file_name + '.%(ext)s',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        # Add cookies and headers to mimic browser
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+            'Sec-Fetch-Mode': 'navigate',
+        },
+        # Add options to bypass restrictions
+        'quiet': False,
+        'no_warnings': True,
+        'nocheckcertificate': True,
+        'prefer_insecure': True,
+        'geo_bypass': True,
+        'geo_bypass_country': 'US',
+        'extractor_retries': 3,
+        'file_access_retries': 3,
+        'fragment_retries': 3,
+        'skip_download': False,
+        'rm_cachedir': True,
+        'force_generic_extractor': False,
+        'sleep_interval': 2,  # Add delay between retries
+        'max_sleep_interval': 5,
     }
 
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([youtube_url])
+    max_retries = 3
+    retry_count = 0
+    formats_to_try = ['bestaudio/best', 'worstaudio/worst', '251/250/249']
+
+    while retry_count < max_retries:
+        try:
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                print(f"\nAttempt {retry_count + 1} of {max_retries}")
+                ydl.download([youtube_url])
+                return os.path.expanduser(file_path + file_name + ".mp3")
+        except Exception as e:
+            print(f"\nError on attempt {retry_count + 1}: {str(e)}")
+            retry_count += 1
+            if retry_count < max_retries:
+                print(f"Retrying with different format...")
+                # Try different format on each retry
+                ydl_opts['format'] = formats_to_try[retry_count % len(formats_to_try)]
+                # Add some delay between retries
+                import time
+                time.sleep(2 * retry_count)
+            else:
+                print("\nFailed to download after all attempts.")
+                raise
 
     return os.path.expanduser(file_path + file_name + ".mp3")
 
@@ -155,6 +208,8 @@ def main():
 
     # Get iTunes metadata
     song_data = get_itunes_metadata(search_query)
+    if song_data is None:
+        return
     print(f"\nSelected: {song_data['trackName']} by {song_data['artistName']}\n")
 
     # Get YouTube URL

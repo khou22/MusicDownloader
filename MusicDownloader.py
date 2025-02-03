@@ -138,14 +138,14 @@ def apply_metadata(mp3_path: str, song_data: dict) -> None:
 
     # Add album artwork
     image_url = song_data["artworkUrl100"].replace("100x100", "500x500")
-    print(f"Applying album artwork from: {image_url}")
     response = requests.get(image_url)
-    audiofile.tag.images.set(
-        3, BytesIO(response.content).read(), "image/jpeg", "Album Artwork"
-    )
+    if response.status_code == 200:
+        # Set the image in the MP3
+        audiofile.tag.images.set(3, response.content, "image/jpeg")
+    else:
+        print(f"Failed to download artwork: HTTP {response.status_code}")
 
-    audiofile.tag.save()
-    print("\nUpdated ID3 Tags")
+    audiofile.tag.save(version=(2, 3, 0))
 
 
 def main():

@@ -1,276 +1,228 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Started: February 7, 2016
-# Finished: February 9, 2016
-# GitHub Repository Name: MusicDownloader
+"""
+MusicDownloader: A tool to download and tag music from YouTube using iTunes metadata.
+Started: February 7, 2016
+"""
 
-# Modules:
-from PIL import Image
 import requests
-from io import BytesIO
-import webbrowser  # This module can control the browser
-import json  # Json encoder/decoder
-from bs4 import BeautifulSoup  # Module to sort through HTML
-import lxml  # Module to prepare html for BeautifulSoup
+import json
+from bs4 import BeautifulSoup
 from urllib.request import urlopen
-import sys  # Allow more control over printing
-import string  # More ways to manipulate strings
-import unidecode  # Decodes weird characters
-import yt_dlp as youtube_dl  # For downloading YouTube videos/audio
-import eyed3  # For editing ID3 tags for mp3 file
-import os  # More control over Mac file system
-
-numShow = 5
-
-# Prompt User for Keywords for Song
-userSearch = input("Search for song: ")  # Reads input as a string
-# userSearch = input("Search for song (use quotes): ") # Reads input as raw code
-# print("Searching for " + userSearch)
-userSearch = userSearch.strip()  # Remove extraneous white space
-
-# Search for song in iTunes Store
-# Documentation: http://www.apple.com/itunes/affiliates/resources/documentation/itunes-store-web-service-search-api.html
-baseURL = "https://itunes.apple.com/search?"
-searchKeys = [
-    ["term", userSearch],
-    ["country", "US"],
-    ["media", "music"],
-    ["entity", "song"],
-    ["limit", "50"],
-    ["lang", "en_us"],
-    ["explicit", "yes"],
-]
-finalURL = baseURL
-for i in range(0, len(searchKeys)):  # len() returns length of a variable
-    # print "Term: %d" % (i)
-    currentKey = searchKeys[i]
-    criteria = str(currentKey[1])  # Make sure it's a string
-    criteria = criteria.replace(" ", "%20")  # %20 represents a space
-    appendStr = currentKey[0] + "=" + criteria  # Build url
-    # print(appendStr)
-    if i < (len(searchKeys) - 1):
-        appendStr += "&"
-    finalURL += appendStr
-
-# print("Final URL: " + finalURL) # Debugging
-# webbrowser.open(finalURL)
-
-# Retrieve and Save iTunes JSON Data
-response = urlopen(finalURL)  # Get HTML source code
-html = response.read()  # HTML source code
-soup = BeautifulSoup(html, "lxml")  # Using lxml parser
-print("")
-print("*********** Found iTunes data ***********")
-print("")
-# print(soup.prettify()) # Feedback
-
-rawJSON = soup.find("p").text  # Just the json text
-rawJSON.strip()  # Trim the white space
-
-# Parse iTunes JSON Data
-iTunesObj = json.loads(rawJSON)  # Decode JSON
-# print(iTunesObj)
-
-results = iTunesObj["results"]
-b = numShow
-if len(results) < numShow:
-    b = len(results)
-
-for i in range(0, b):
-    sys.stdout.write("(%i) Track Name: " % i)
-    sys.stdout.flush()  # No line break
-    print(results[i]["trackName"])  # Adds a line break after
-    print("    Artist: %s" % results[i]["artistName"])
-    print("    Album: %s" % results[i]["collectionName"])
-    print("    Genre: %s" % results[i]["primaryGenreName"])
-    print("")
-
-print("Which song is the one you were looking for?")
-iTunesSearchSelection = input("Type the respective index: ")
-songData = results[int(iTunesSearchSelection)]
-print()  # Line break
-print("Selected:")
-print("%s by %s" % (songData["trackName"], songData["artistName"]))
-print(songData)
-print()  # Line break
+import yt_dlp as youtube_dl
+import eyed3
+import os
+import inquirer
 
 
-# *******************   Find song on YouTube   *******************
+def get_itunes_metadata(search_query: str, num_results: int = 5) -> dict:
+    """
+    Search iTunes for song metadata and let user select the correct match.
 
-searchAudio = input(
-    "Search for audio video? (y/n) "
-)  # Ask if want to search for audio on YouTube
-extra = ""
-if searchAudio == "y":  # If only want to search for audio videos
-    extra = " Audio"  # add on 'audio' to search
+    Args:
+        search_query (str): The song to search for
+        num_results (int): Number of results to show user
 
-baseURL = "https://www.youtube.com/results?search_query="
-YouTubeSearch = songData["trackName"] + " " + songData["artistName"] + extra
-print()  # Line break
+    Returns:
+        dict: iTunes metadata for the selected song
+    """
+    # Search iTunes Store API
+    base_url = "https://itunes.apple.com/search?"
+    search_keys = [
+        ["term", search_query],
+        ["country", "US"],
+        ["media", "music"],
+        ["entity", "song"],
+        ["limit", "50"],
+        ["lang", "en_us"],
+        ["explicit", "yes"],
+    ]
 
-YouTubeSearch = unidecode.unidecode(YouTubeSearch)  # Remove complex unicode characters
-print("Searching for '%s' on YouTube" % YouTubeSearch)
-print()  # Line break
-# out = YouTubeSearch.translate(string.maketrans("",""), string.punctuation) # Remove punctuation
-YouTubeSearch = YouTubeSearch.replace(" ", "+")  # Remove spaces with '+'
-finalURL = baseURL + YouTubeSearch  # Final URL
+    final_url = base_url
+    for i, (key, value) in enumerate(search_keys):
+        criteria = str(value).replace(" ", "%20")
+        append_str = f"{key}={criteria}"
+        if i < (len(search_keys) - 1):
+            append_str += "&"
+        final_url += append_str
 
-print(finalURL)
+    # Get iTunes data
+    response = urlopen(final_url)
+    html = response.read()
+    soup = BeautifulSoup(html, "lxml")
+    raw_json = soup.find("p").text.strip()
 
-"""
-response = urllib.urlopen(finalURL) #Get HTML source code
-html = response.read() #HTML source code
-soup = BeautifulSoup(html, "lxml") # Using lxml parser
+    # Parse results
+    itunes_obj = json.loads(raw_json)
+    results = itunes_obj["results"]
 
-links = soup.find_all("a")
-print(links)
+    if not results:
+        print("No results found.")
+        return None
 
-videoLinks = [] # Start empty
-# videoTitleElements = soup.findAll("h3", { "class": "title-and-badge style-scope ytd-video-renderer" }) # Get video titles then get video links
-videoTitleElements = soup.findAll("a", { "id": "video-title" }) # Get video titles then get video links
-print(videoTitleElements)
-for title in videoTitleElements:
-    print("Found title %s" % title)
-    link = title.findAll("a") # Get link within the title
-    videoLinks.append(link[0]) # Add link to master list
+    # Create choices for inquirer
+    choices = []
+    for i in range(min(num_results, len(results))):
+        song = results[i]
+        display_name = f"{song['trackName']} - by {song['artistName']} (Album: {song['collectionName']}, Genre: {song['primaryGenreName']})"
+        choices.append((display_name, i))
 
-videoUploaders = [] # Start empty
-videoUploaderElements = soup.findAll("div", { "class": "yt-lockup-byline " }) # Get video uploader divs
-for element in videoUploaderElements:
-    uploader = element.findAll("a") # Extract the uploader link
-    if len(uploader) is not 0:
-        videoUploaders.append(uploader[0]) # Append to master list
-
-videoTimes = soup.findAll("div", { "class": "ytd-thumbnail-overlay-time-status-renderer" }) # In case there are playlists, find the div
-
-videos = [];
-# Stores all the results on the page except for the last 3 hits on the page
-upper = len(videoTimes) - 3
-numPlaylists = 0
-for i in range(0, upper):
-    # print i
-    # print(videoTimes[i])
-    time = videoTimes[i].findAll("span", { "class": "video-time" }) # Find within the larger div
-    if not time: # If array is empty (ie. no time found for that video)
-        numPlaylists += 1
-        # print "Found a playlist"
-    else: # If not a playlists
-        # The video must be a playlist
-        time = time[0] # First result
-
-        link = "https://www.youtube.com" + videoLinks[i].get('href')
-
-        # print(videoLinks[i].contents[0])
-        # print(link)
-        # print videoUploaders[i]
-
-        # Structure of array:
-        # [name, link, uploader, length]
-        videos.append(
-            [
-                videoLinks[i].contents[0],
-                link,
-                videoUploaders[i].contents[0],
-                time.text
-            ]
+    # Create and show selection prompt
+    questions = [
+        inquirer.List(
+            "song", message="Select the correct song", choices=choices, carousel=True
         )
+    ]
 
-# Only returns up to specified number
-print "Found %s playlist(s)" % numPlaylists
-for i in range(0, numShow):
-    video = videos[i]
-    sys.stdout.write("(%i) Video name: " % i)
-    sys.stdout.flush() # No line break
-    print video[0] # Adds a line break after
-    print "    Link: %s" % video[1]
-    print "    Uploader: %s" % video[2]
-    print "    Length: %s" % video[3]
-    print("")
+    # Get user selection
+    answers = inquirer.prompt(questions)
+    if not answers:
+        print("Selection cancelled.")
+        return None
 
-milliseconds = songData['trackTimeMillis']
-x = milliseconds / 1000
-seconds = x % 60
-x /= 60
-minutes = x % 60
-
-time = str(minutes) + ":" + str(seconds)
-
-print "Which video is the one you were looking for?"
-print "The iTunes version is: %s" % time
-YouTubeSelection = input("Type the respective index: ")
-print "" # Line break
-data = videos[YouTubeSelection]
-"""
-
-# Manual link input
-print("Which video is the one you were looking for?")
-link = input("copy paste the link: ")
-data = ["", link]
-
-fileName = songData["artistName"] + " - " + songData["trackName"]  # Declare file name
-filePath = "~/Desktop/"  # Declare file path
-
-ydl_opts = {  # Set options
-    "format": "bestaudio/best",
-    # 'outtmpl': u'%(title)s-%(id)s.%(ext)s',
-    "outtmpl": filePath + fileName + ".%(ext)s",
-    "postprocessors": [
-        {
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "mp3",
-            "preferredquality": "192",  # 128, 160, 192, 210, 256
-        }
-    ],
-    "quiet": False,
-}
-
-with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-    print(data[1])
-    ydl.download([data[1]])  # Download the song
-
-# *******************   Find Image Artwork   *******************
-# print("Finding Google Image for album artwork")
-# Add code here:
+    return results[answers["song"]]
 
 
-# *******************   Update ID3 Tags   *******************
+def download_youtube_audio(
+    song_data: dict, youtube_url: str, file_path: str = "~/Desktop/"
+) -> str:
+    """
+    Download YouTube video as MP3 using specified quality settings.
 
-mp3Path = os.path.expanduser(filePath + fileName + ".mp3")
-year = str(songData["releaseDate"])
-year = int(year[:4])
+    Args:
+        song_data (dict): iTunes metadata for the song
+        youtube_url (str): YouTube URL to download from
+        file_path (str): Directory to save the MP3 file
 
-audiofile = eyed3.load(mp3Path)
-audiofile.tag.title = songData["trackName"]
-audiofile.tag.artist = songData["artistName"]
-audiofile.tag.album = songData["collectionName"]
-audiofile.tag.album_artist = songData[
-    "artistName"
-]  # This needs to be changed - need to be able to find album artist, not song artist
-audiofile.tag.track_num = (songData["trackNumber"], songData["trackCount"])
-audiofile.tag.disc_num = (songData["discNumber"], songData["discCount"])
-audiofile.tag.genre = songData["primaryGenreName"]
-audiofile.tag.release_date = year
-audiofile.tag.orig_release_date = year
-audiofile.tag.recording_date = year
-audiofile.tag.encoding_date = year
-audiofile.tag.taggin_date = year
+    Returns:
+        str: Path to the downloaded MP3 file
+    """
+    file_name = f"{song_data['artistName']} - {song_data['trackName']}"
+
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "outtmpl": file_path + file_name + ".%(ext)s",
+        "postprocessors": [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "192",
+            }
+        ],
+        # Add cookies and headers to mimic browser
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-us,en;q=0.5",
+            "Sec-Fetch-Mode": "navigate",
+        },
+        # Add options to bypass restrictions
+        "quiet": False,
+        "no_warnings": True,
+        "nocheckcertificate": True,
+        "prefer_insecure": True,
+        "geo_bypass": True,
+        "geo_bypass_country": "US",
+        "extractor_retries": 3,
+        "file_access_retries": 3,
+        "fragment_retries": 3,
+        "skip_download": False,
+        "rm_cachedir": True,
+        "force_generic_extractor": False,
+        "sleep_interval": 2,  # Add delay between retries
+        "max_sleep_interval": 5,
+    }
+
+    max_retries = 3
+    retry_count = 0
+    formats_to_try = ["bestaudio/best", "worstaudio/worst", "251/250/249"]
+
+    while retry_count < max_retries:
+        try:
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                print(f"\nAttempt {retry_count + 1} of {max_retries}")
+                ydl.download([youtube_url])
+                return os.path.expanduser(file_path + file_name + ".mp3")
+        except Exception as e:
+            print(f"\nError on attempt {retry_count + 1}: {str(e)}")
+            retry_count += 1
+            if retry_count < max_retries:
+                print(f"Retrying with different format...")
+                # Try different format on each retry
+                ydl_opts["format"] = formats_to_try[retry_count % len(formats_to_try)]
+                # Add some delay between retries
+                import time
+
+                time.sleep(2 * retry_count)
+            else:
+                print("\nFailed to download after all attempts.")
+                raise
+
+    return os.path.expanduser(file_path + file_name + ".mp3")
 
 
-# Append Image
-# Reference: http://tuxpool.blogspot.com/2013/02/how-to-store-images-in-mp3-files-using.html
-image_url = songData["artworkUrl100"].replace("100x100", "500x500")
-response = requests.get(image_url)
-# img = Image.open(BytesIO(response.content).read())
-# imageData = open("test.jpg", "rb").read() # Stores image data
-audiofile.tag.images.set(
-    3, BytesIO(response.content).read(), "image/jpeg", "Description"
-)  # 3 for front cover, 4 for back, 0 for other
+def apply_metadata(mp3_path: str, song_data: dict) -> None:
+    """
+    Apply iTunes metadata to the MP3 file including artwork.
 
-audiofile.tag.save()
+    Args:
+        mp3_path (str): Path to the MP3 file
+        song_data (dict): iTunes metadata to apply
+    """
+    year = int(str(song_data["releaseDate"])[:4])
 
-print()  # Line break
-print("Updated ID3 Tags")
-# print "Song Year (Must Manually Add): %s" % year
-print()  # Line break
-print("**************   Complete   **************")
+    audiofile = eyed3.load(mp3_path)
+    audiofile.tag.title = song_data["trackName"]
+    audiofile.tag.artist = song_data["artistName"]
+    audiofile.tag.album = song_data["collectionName"]
+    audiofile.tag.album_artist = song_data["artistName"]
+    audiofile.tag.track_num = (song_data["trackNumber"], song_data["trackCount"])
+    audiofile.tag.disc_num = (song_data["discNumber"], song_data["discCount"])
+    audiofile.tag.genre = song_data["primaryGenreName"]
+
+    # Set all date tags
+    for date_tag in [
+        "release_date",
+        "orig_release_date",
+        "recording_date",
+        "encoding_date",
+        "taggin_date",
+    ]:
+        setattr(audiofile.tag, date_tag, year)
+
+    # Add album artwork
+    image_url = song_data["artworkUrl100"].replace("100x100", "500x500")
+    response = requests.get(image_url)
+    if response.status_code == 200:
+        # Set the image in the MP3
+        audiofile.tag.images.set(3, response.content, "image/jpeg")
+    else:
+        print(f"Failed to download artwork: HTTP {response.status_code}")
+
+    audiofile.tag.save(version=(2, 3, 0))
+
+
+def main():
+    """Main function to orchestrate the music download process."""
+    # Get song search from user
+    search_query = input("Search for song: ").strip()
+
+    # Get iTunes metadata
+    song_data = get_itunes_metadata(search_query)
+    if song_data is None:
+        return
+    print(f"\nSelected: {song_data['trackName']} by {song_data['artistName']}\n")
+
+    # Get YouTube URL
+    youtube_url = input("Enter YouTube URL for the song: ")
+
+    # Download and process
+    mp3_path = download_youtube_audio(song_data, youtube_url)
+    apply_metadata(mp3_path, song_data)
+
+    print("\n**************   Complete   **************")
+
+
+if __name__ == "__main__":
+    main()
